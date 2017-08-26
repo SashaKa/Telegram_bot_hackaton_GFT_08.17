@@ -17,25 +17,42 @@ const state = {}
 bot.onText(/^/, function(msg) {
   const name = msg.from.first_name
   const id = msg.chat.id
-  if (!state[id]) state[id] = []
-  state[id].push(msg.text)
   bot.sendMessage(id, `Ты только что сказала мне ${msg.text}`).then(function() {
     console.log('state', state)
-    if (state[id].length > 3) {
-      bot.sendMessage(id, `В моем стейте уже 4 элемента`)
+  })
+})
+
+bot.onText(/begin/, msg => {
+  const name = msg.from.first_name
+  const id = msg.chat.id
+  bot.sendMessage(id, `Привет, ${name}! Выбери один из вариантов!`, {
+    reply_markup: {
+      keyboard: [
+        ['Опция 1', 'Опция 2'],
+        ['Опция 3', 'Опция 4']
+      ],
+      one_time_keyboard: true
     }
   })
 })
 
-bot.onText(/^show me keyboard/, msg => {
-  bot.sendMessage(msg.chat.id, 'Keyboard example', {
-    reply_markup: {
-      keyboard: [
-        ['Sample text', 'Second sample'],
-        ['Keyboard', 'another'],
-        ["I'm robot"]
-      ]
-    }
+bot.onText(/^(Опция 1|Опция 2|Опция 3|Опция 4)$/, msg => {
+  const name = msg.from.first_name
+  const id = msg.chat.id
+  state[id] = {}
+  Object.assign(state[id], {
+    1: msg.text
+  })
+  bot.sendMessage(id, `Твой выбор ${state[id][1]}`).then(() => {
+    bot.sendMessage(id, `Давай попробуем еще!`, {
+      reply_markup: {
+        keyboard: [
+          ['Опция 5', 'Опция 6'],
+          ['Опция 7', 'Опция 8']
+        ],
+        one_time_keyboard: true
+      }
+    })
   })
 })
 
