@@ -7,22 +7,21 @@ if (process.env.NODE_ENV === 'production') {
   bot = new Bot(token)
   bot.setWebHook(process.env.HEROKU_URL + bot.token)
 } else {
-  bot = new Bot(token, { polling: true })
+  bot = new Bot(token, {polling: true})
 }
 
 console.log('Bot server started in the ' + process.env.NODE_ENV + ' mode')
 
 const state = {}
 
+// это нужно убрать когда пойдете в продакшен
 bot.onText(/^/, function(msg) {
   const name = msg.from.first_name
   const id = msg.chat.id
-  console.log(state)
-
-  // // bot.sendMessage(id, `Привет, как тебя зовут?`).then(function() {
-  // //   console.log('state', state)
-  // })
+  console.log('state:', state)
 })
+
+// вот до сюда
 
 bot.onText(/start/, msg => {
   const name = msg.from.first_name
@@ -98,22 +97,34 @@ bot.onText(/^(Совсем не знаю|До 5|5-7|7-10)$/, (msg, match) => {
   })
 })
 
-bot.onText(/^(Смотреть)$/, msg => {
+bot.onText(/^(Смотреть|Читать|Слушать|На практике)$/, msg => {
   const name = msg.from.first_name
   const id = msg.chat.id
   Object.assign(state[id], {
     'Answer 4': msg.text
   })
-  bot
-    .sendMessage(id, `${state[id][3]} - Так держать! Будет интересно!`)
-    .then(() => {
-      bot.sendMessage(id, `Выбери удобный тебе формат обучения!`, {
-        reply_markup: {
-          keyboard: [['Смотреть', 'Читать'], ['Слушать', 'На практике']],
-          one_time_keyboard: true
-        }
-      })
-    })
+  let text;
+  if (typeof state[id] !== 'undefined' && Object.keys(state[id]).length === 4) {
+    text = `
+    Поздравляем, вы успешно прошли наш тест!
+    \u{2728}
+    \u{1F604}
+    <strong>Поздравляю!</strong>
+    <i>От всей души!</i>
+    <em>тут какой то текст</em>
+    <a href="https://www.youtube.com/watch?v=RQg_Q4HYYpg">ссылка на видео</a>
+    <a href="http://www.google.com/">Ссылка</a>
+    Ваши ответы:
+    1: ${state[id]['Answer 1']}
+    2: ${state[id]['Answer 2']}
+    3: ${state[id]['Answer 3']}
+    4: ${state[id]['Answer 4']}`
+  } else {
+    text = 'ваших ответов недостаточно, наберите команду <b>start</b>'
+  }
+  bot.sendMessage(id, text, {parse_mode: 'HTML'}).then(() => {
+    bot.sendSticker(msg.chat.id, 'CAADAgADrAADBCOmDIRBbsLh2lHxAg')
+  })
 })
 
 bot.onText(/^sticker/, msg => {
