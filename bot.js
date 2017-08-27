@@ -14,28 +14,20 @@ console.log('Bot server started in the ' + process.env.NODE_ENV + ' mode')
 
 const state = {}
 
-bot.onText(/^/, function(msg) {
-  const name = msg.from.first_name
-  const id = msg.chat.id
-  console.log(state)
 
-  // // bot.sendMessage(id, `Привет, как тебя зовут?`).then(function() {
-  // //   console.log('state', state)
-  // })
-})
 
 bot.onText(/start/, msg => {
   const name = msg.from.first_name
   const id = msg.chat.id
-  bot.sendMessage(id, `Привет, ${name}! Где ты учишься?`, {
+  bot.sendMessage(id, `Привет, ${name}! Где ты учишьcя?`, {
     reply_markup: {
-      keyboard: [['В школе', 'В университете'], ['В техникуме', 'Не учусь']],
+      keyboard: [['10-11 классe'],['В СУЗЕ']],
       one_time_keyboard: true
     }
   })
 })
 
-bot.onText(/^(В школе|В университете|В техникуме|Не учусь)$/, (msg, match) => {
+bot.onText(/^(10-11 классе|В СУЗЕ)$/, (msg, match) => {
   const name = msg.from.first_name
   const id = msg.chat.id
   state[id] = {}
@@ -45,85 +37,67 @@ bot.onText(/^(В школе|В университете|В техникуме|Н
   const botAnswer =
     match[0] != 'Не учусь'
       ? `${state[id]['Answer 1']} - здорово!`
-      : 'И это только начало'
+      : 'Тогда начнем?'
   bot.sendMessage(id, botAnswer).then(() => {
-    bot.sendMessage(id, `Что тебе нравится?`, {
+    bot.sendMessage(id, `А какой экзамен ты будешь сдавать?`, {
       reply_markup: {
-        keyboard: [['Лазеры', 'Роботы'], ['Еда', 'Все это']],
+        keyboard: [
+          ['Биология', 'Физика', 'Химия'],
+          ['Информатика', 'Профильная математика']
+        ],
         one_time_keyboard: true
       }
     })
   })
 })
-bot.onText(/^(Лазеры|Роботы|Еда|Все это)$/, msg => {
-  const name = msg.from.first_name
-  const id = msg.chat.id
-  Object.assign(state[id], {
-    'Answer 2': msg.text
-  })
-  bot.sendMessage(id, `${state[id]['Answer 2']} по тебе!`).then(() => {
-    bot.sendMessage(id, `Насколько ты знаешь физику от 0 до 10?`, {
-      reply_markup: {
-        keyboard: [['До 5', '5-7'], ['7-10', 'Совсем не знаю']],
-        one_time_keyboard: true
-      }
+bot.onText(
+  /^(Биология|Физика|Химия|Информатика|Профильная математика)$/,
+  msg => {
+    const name = msg.from.first_name
+    const id = msg.chat.id
+    Object.assign(state[id], {
+      'Answer 2': msg.text
     })
-  })
-})
+    bot
+      .sendMessage(id, `${state[id]['Answer 2']} - очень интересное дело!`)
+      .then(() => {
+        bot.sendMessage(id, `Как ты лучше воспринимаешь информацию?!`, {
+          reply_markup: {
+            keyboard: [['Видео', 'Аудио'], ['Книги', 'Графики']],
+            one_time_keyboard: true
+          }
+        })
+      })
+  }
+)
 
-bot.onText(/^(Совсем не знаю|До 5|5-7|7-10)$/, (msg, match) => {
+bot.onText(/^(Видео|Аудио|Книги|Графики)$/, msg => {
   const name = msg.from.first_name
   const id = msg.chat.id
   Object.assign(state[id], {
     'Answer 3': msg.text
   })
-  let botAnswer
-  switch (match[0]) {
-    case 'Совсем не знаю':
-      botAnswer = 'попробуем подтянуть!'
-    case 'До 5':
-      botAnswer = '2!'
-    case '5-7':
-      botAnswer = '3!'
-    case '7-10':
-      botAnswer = '4!'
-  }
-  bot.sendMessage(id, botAnswer).then(() => {
-    bot.sendMessage(id, `Выбери удобный тебе формат обучения!`, {
-      reply_markup: {
-        keyboard: [['Смотреть', 'Читать'], ['Слушать', 'На практике']],
-        one_time_keyboard: true
-      }
-    })
+ let text;
+  if (typeof state[id] !== 'undefined' && Object.keys(state[id]).length === 3) {
+     text = `
+      <strong> \u{2728}Поздравляю! \u{1F604}</strong>
+      <em>Вот, что я узнал о тебе:</em>
+       -что ты учишься в ${state[id]['Answer 1']}
+       -тебе интересна ${state[id]['Answer 2']}
+       -для тебя удобнее ${state[id]['Answer 3']}
+       <em>Поэтому, думаю, что тебе будет интересно<a href="https://youtu.be/HNiojTHQ26c"> посмотреть видео </a>
+       и почитать по этой теме<a href="http://okhotnik-galina.ucoz.ru/_ph/9/247214088.jpg"> статью</a> </em>
+      `
+   } else {
+    text = 'ваших ответов недостаточно, наберите команду <b>start</b>'
+   }
+    bot.sendMessage(id, text, {parse_mode: 'HTML'}).then(() => {
+    bot.sendSticker(msg.chat.id, 'CAADAgADrAADBCOmDIRBbsLh2lHxAg')
   })
-})
-
-bot.onText(/^(Смотреть)$/, msg => {
-  const name = msg.from.first_name
-  const id = msg.chat.id
-  Object.assign(state[id], {
-    'Answer 4': msg.text
   })
-  bot
-    .sendMessage(id, `${state[id][3]} - Так держать! Будет интересно!`)
-    .then(() => {
-      bot.sendMessage(id, `Выбери удобный тебе формат обучения!`, {
-        reply_markup: {
-          keyboard: [['Смотреть', 'Читать'], ['Слушать', 'На практике']],
-          one_time_keyboard: true
-        }
-      })
-    })
-})
-
-bot.onText(/^sticker/, msg => {
-  bot.sendSticker(msg.chat.id, 'CAADAgADrAADBCOmDIRBbsLh2lHxAg')
-})
-bot.onText(/^video/, msg => {
-  bot.InlineQueryResultVideo(msg.chat.id, '')
-})
-bot.onText(/^Gif/, msg => {
-  bot.InlineQueryResultGif(msg.chat.id, '')
-})
 
 module.exports = bot
+
+  
+
+  
